@@ -1,0 +1,351 @@
+# Satu Vending Machine - Complete Wiring Harness Specification
+# Version: 1.0
+# Date: April 2025
+# For supplier quotation and production
+
+connectors:
+  # ============================================================
+  # ESP32 Display Board Connectors (based on ESP32-8048S070C)
+  # Source: Documentation confirms P1 (4-pin JST1.25) for UART [citation:4]
+  # ============================================================
+  
+  ESP32_P1:
+    type: JST GH 1.25mm 4-pin
+    pincount: 4
+    pinlabels: [GND, RX, TX, +5V]
+    pincolors: [BLACK, WHITE, GREEN, RED]
+    notes: "ESP32 UART header - Connect to P1 on ESP32-8048S070C [citation:4]"
+    
+  ESP32_I2C:
+    type: JST GH 1.25mm 4-pin  
+    pincount: 4
+    pinlabels: [GND, SCL, SDA, +3.3V]
+    pincolors: [BLACK, BLUE, YELLOW, RED]
+    notes: "ESP32 I2C header - Alternative pins on P3/P4 [citation:4]"
+
+  # ============================================================
+  # MCP23017 Breakout Board - Two chips for full I/O
+  # Source: MCP23017 provides 16 I/O pins over I2C [citation:2][citation:9]
+  # Each chip requires VDD, VSS, SDA, SCL, and address config
+  # ============================================================
+  
+  MCP23017_1:
+    type: MCP23017 Breakout Board (Address 0x20)
+    pincount: 16
+    pinlabels:
+      - VDD      # Pin 1 - 5V Power
+      - VSS      # Pin 2 - Ground
+      - GPA0     # Sensor 1 Input
+      - GPA1     # Sensor 2 Input
+      - GPA2     # Sensor 3 Input
+      - GPA3     # Sensor 4 Input
+      - GPA4     # Sensor 5 Input
+      - GPA5     # Sensor 6 Input
+      - GPA6     # Sensor 7 Input
+      - GPA7     # Sensor 8 Input
+      - GPB0     # Relay 1 Output
+      - GPB1     # Relay 2 Output
+      - GPB2     # Relay 3 Output
+      - GPB3     # Relay 4 Output
+      - GPB4     # Relay 5 Output
+      - GPB5     # Relay 6 Output
+      - GPB6     # LED indicator 1
+      - GPB7     # LED indicator 2
+    notes: |
+      First MCP23017 for 8 sensors + 6 relays + 2 LEDs
+      Address set via A0=A1=A2=GND (0x20)
+      Internal pull-up enabled on sensor inputs [citation:2]
+      
+  MCP23017_2:
+    type: MCP23017 Breakout Board (Address 0x21)
+    pincount: 16
+    pinlabels:
+      - VDD      # 5V Power
+      - VSS      # Ground  
+      - GPA0     # Sensor 9 Input
+      - GPA1     # Sensor 10 Input
+      - GPA2     # Spare/Expansion
+      - GPA3     # Spare/Expansion
+      - GPA4     # Spare/Expansion
+      - GPA5     # Spare/Expansion
+      - GPA6     # Spare/Expansion
+      - GPA7     # Spare/Expansion
+      - GPB0     # Relay 7 Output
+      - GPB1     # Relay 8 Output
+      - GPB2     # Relay 9 Output
+      - GPB3     # Relay 10 Output
+      - GPB4     # Water Pump Relay
+      - GPB5     # Door Lock Solenoid
+      - GPB6     # LED strip signal
+      - GPB7     # Spare
+    notes: |
+      Second MCP23017 for remaining sensors + relays
+      Address set via A0=VCC, A1=GND, A2=GND (0x21)
+
+  # ============================================================
+  # IR Drop Sensors (10 units)
+  # ============================================================
+  
+  IR_SENSOR:
+    type: JST GH 1.25mm 3-pin
+    pincount: 3
+    pinlabels: [VCC, GND, OUT]
+    pincolors: [RED, BLACK, YELLOW]
+    notes: "IR obstacle sensor module - adjustable sensitivity"
+
+  # ============================================================
+  # Relay Module (8-channel + 2-channel or single 16-channel)
+  # Relay IN pins active HIGH (3.3V-5V logic)
+  # ============================================================
+  
+  RELAY_CTRL:
+    type: Pin Header 2.54mm
+    pincount: 10
+    pinlabels: [IN0, IN1, IN2, IN3, IN4, IN5, IN6, IN7, IN8, IN9]
+    notes: "Connect to MCP23017 outputs - signals only"
+
+  RELAY_POWER:
+    type: Screw Terminal
+    pincount: 10
+    pinlabels: [COM, NO, NC]  # Per channel
+    notes: |
+      COM: 12V from power supply
+      NO: To motor positive
+      NC: Not used
+      Motor negative direct to 12V supply ground
+
+  # ============================================================
+  # 5V Power Supply (for logic)
+  # ============================================================
+  
+  PSU_5V:
+    type: Screw Terminal
+    pincount: 2
+    pinlabels: [VCC, GND]
+    notes: "5V 5A minimum - powers ESP32, MCP23017s, sensors, relay coils"
+
+  # ============================================================
+  # 12V Power Supply (for motors)
+  # ============================================================
+  
+  PSU_12V:
+    type: Screw Terminal
+    pincount: 2
+    pinlabels: [VCC, GND]
+    notes: "12V 10A minimum - powers motors and water pump"
+
+# ============================================================
+# CABLES - Main Harness (Long runs from ESP32)
+# ============================================================
+
+cables:
+  # Cable 1: ESP32 to MCP23017 #1 (I2C + Power)
+  HARNESS_I2C_1:
+    length: 0.5
+    gauge: 26
+    colors: [RED, BLACK, YELLOW, BLUE]
+    wire_labels: [VCC, GND, SDA, SCL]
+    connectors:
+      - ESP32_I2C: [4, 1, 3, 2]    # Map: VCC→4, GND→1, SDA→3, SCL→2
+      - MCP23017_1: [1, 2, 3, 4]   # Map: VDD→1, VSS→2, SDA→3, SCL→4
+
+  # Cable 2: ESP32 to MCP23017 #2 (I2C + Power)  
+  HARNESS_I2C_2:
+    length: 0.5
+    gauge: 26
+    colors: [RED, BLACK, YELLOW, BLUE]
+    wire_labels: [VCC, GND, SDA, SCL]
+    connectors:
+      - ESP32_I2C: [4, 1, 3, 2]
+      - MCP23017_2: [1, 2, 3, 4]
+
+  # Cable 3: ID Card Reader (UART)
+  HARNESS_ID_READER:
+    length: 0.5
+    gauge: 26
+    colors: [RED, BLACK, GREEN, WHITE]
+    wire_labels: [VCC, GND, TX, RX]
+    connectors:
+      - ESP32_P1: [4, 1, 3, 2]     # +5V→4, GND→1, TX→3, RX→2
+      - ID_CARD_READER: [1, 2, 3, 4]  # Per reader spec
+
+# ============================================================
+# PIGTAILS - Short runs from MCP23017 to Sensors/Relays
+# ============================================================
+
+  # Sensor Pigtails (10 identical cables)
+  PIGTAIL_SENSOR_1:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_1: [1, 2, 3]      # VDD→1, VSS→2, GPA0→3
+      - IR_SENSOR: [1, 2, 3]       # VCC→1, GND→2, OUT→3
+
+  PIGTAIL_SENSOR_2:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_1: [1, 2, 4]      # VDD→1, VSS→2, GPA1→4
+      - IR_SENSOR: [1, 2, 3]
+
+  PIGTAIL_SENSOR_3:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_1: [1, 2, 5]      # GPA2
+      - IR_SENSOR: [1, 2, 3]
+
+  PIGTAIL_SENSOR_4:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_1: [1, 2, 6]      # GPA3
+      - IR_SENSOR: [1, 2, 3]
+
+  PIGTAIL_SENSOR_5:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_1: [1, 2, 7]      # GPA4
+      - IR_SENSOR: [1, 2, 3]
+
+  PIGTAIL_SENSOR_6:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_1: [1, 2, 8]      # GPA5
+      - IR_SENSOR: [1, 2, 3]
+
+  PIGTAIL_SENSOR_7:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_1: [1, 2, 9]      # GPA6
+      - IR_SENSOR: [1, 2, 3]
+
+  PIGTAIL_SENSOR_8:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_1: [1, 2, 10]     # GPA7
+      - IR_SENSOR: [1, 2, 3]
+
+  PIGTAIL_SENSOR_9:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_2: [1, 2, 3]      # GPA0 on second chip
+      - IR_SENSOR: [1, 2, 3]
+
+  PIGTAIL_SENSOR_10:
+    length: 0.2
+    gauge: 26
+    colors: [RED, BLACK, YELLOW]
+    wire_labels: [VCC, GND, OUT]
+    connectors:
+      - MCP23017_2: [1, 2, 4]      # GPA1 on second chip
+      - IR_SENSOR: [1, 2, 3]
+
+  # Relay Signal Pigtails
+  PIGTAIL_RELAY_1:
+    length: 0.2
+    gauge: 26
+    colors: [BLUE, BLACK]
+    wire_labels: [SIGNAL, GND]
+    connectors:
+      - MCP23017_1: [1, 2, 11]     # VDD→1, VSS→2, GPB0→11
+      - RELAY_CTRL: [1, 2]         # IN0→1, GND→2
+
+  # [Add PIGTAIL_RELAY_2 through PIGTAIL_RELAY_10 similarly]
+  # Each uses next MCP23017 pin (11-20 for first chip, then second chip)
+
+# ============================================================
+# POWER DISTRIBUTION
+# ============================================================
+
+connections:
+  # 5V Power Distribution
+  - source: PSU_5V: [VCC]
+    sinks: [ESP32_P1: [4], ESP32_I2C: [4], MCP23017_1: [1], MCP23017_2: [1]]
+    notes: "All 5V lines connected - use distribution block"
+    
+  - source: PSU_5V: [GND]
+    sinks: [ESP32_P1: [1], ESP32_I2C: [1], MCP23017_1: [2], MCP23017_2: [2]]
+    notes: "Common ground for all logic circuits"
+
+  # 12V Power Distribution (to relay COM terminals)
+  - source: PSU_12V: [VCC]
+    sinks: [RELAY_POWER: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]]
+    notes: "Daisy chain COM terminals for all 10 relays"
+
+  - source: PSU_12V: [GND]
+    sinks: [MOTORS: [GND]]
+    notes: "All motor negative leads direct to 12V supply ground"
+
+# ============================================================
+# BILL OF MATERIALS (Auto-generated)
+# ============================================================
+
+bom:
+  - item: ESP32-S3 Display Board
+    part_number: ESP32-8048S070C
+    quantity: 1
+    notes: "7 inch capacitive touch, 16MB Flash, 8MB PSRAM [citation:1][citation:4]"
+    
+  - item: MCP23017 Breakout Board
+    part_number: MCP23017
+    quantity: 2
+    notes: "16-bit I2C I/O expander, 1.8-5.5V operation [citation:10]"
+    
+  - item: IR Drop Sensor
+    part_number: IR-OB-3PIN
+    quantity: 10
+    notes: "Adjustable range, 3-50cm detection, 3.3-5V"
+    
+  - item: 8-Channel Relay Module
+    part_number: RELAY-8CH-5V
+    quantity: 1
+    notes: "5V coil, opto-isolated, active HIGH trigger"
+    
+  - item: 2-Channel Relay Module  
+    part_number: RELAY-2CH-5V
+    quantity: 1
+    notes: "For remaining 2 channels + water pump"
+    
+  - item: ID Card Reader
+    part_number: RDM6300
+    quantity: 1
+    notes: "125kHz RFID, UART output, 5V"
+    
+  - item: JST GH Cable Set
+    part_number: CUSTOM-HARNESS
+    quantity: 1_set
+    notes: "Custom harness per above specification"
+    
+  - item: 5V Power Supply
+    part_number: PSU-5V-5A
+    quantity: 1
+    notes: "For logic: ESP32, MCP23017s, sensors, relays"
+    
+  - item: 12V Power Supply  
+    part_number: PSU-12V-10A
+    quantity: 1
+    notes: "For motors and water pump"
